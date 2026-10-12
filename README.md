@@ -34,8 +34,8 @@ let token = SectionContents.observe(handlers) { buffer in
 
 SE-0492 lets a `@section` `@used` global land in a named section. It leaves reading the
 section back to each library. This package is that reading half, as a dependency-free
-prototype of the runtime API proposed in
-[swift-mediator/Pitches](https://github.com/OlafAndreas/swift-mediator/tree/main/Pitches).
+prototype of the runtime API pitched on the Swift Forums:
+[\[Pitch\] Runtime enumeration of custom sections](https://forums.swift.org/t/pitch-runtime-enumeration-of-custom-sections/90011).
 
 ## Install
 

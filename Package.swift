@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 5.9
 import PackageDescription
 
 let package = Package(
@@ -13,5 +13,6 @@ let package = Package(
         // from each image's file, because ELF section headers are not mapped at runtime.
         .target(name: "SwiftSectionsShim"),
         .testTarget(name: "SwiftSectionsTests", dependencies: ["SwiftSections"]),
-    ]
+    ],
+    swiftLanguageVersions: [.version("6")]
 )

@@ -1,15 +1,8 @@
 #if canImport(Darwin)
 import Darwin
-#elseif canImport(Glibc)
-import Glibc
-#elseif canImport(Musl)
-import Musl
-#elseif canImport(Android)
-import Android
-#endif
 
-/// A plain mutex. Not recursive: image-load callbacks may run on the loader's thread, and
-/// nothing here must call back into the loader while holding it.
+/// A plain mutex for the Mach-O image registry. Not recursive: image-load callbacks may run
+/// on the loader's thread, and nothing here must call back into the loader while holding it.
 final class Lock: @unchecked Sendable {
     private let mutex: UnsafeMutablePointer<pthread_mutex_t>
 
@@ -29,3 +22,4 @@ final class Lock: @unchecked Sendable {
         return try body()
     }
 }
+#endif

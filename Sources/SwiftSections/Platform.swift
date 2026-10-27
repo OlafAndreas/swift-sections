@@ -106,7 +106,7 @@ enum Platform {
             let ok = modules.withUnsafeMutableBufferPointer { buffer in
                 K32EnumProcessModules(
                     process, buffer.baseAddress, DWORD(buffer.count * MemoryLayout<HMODULE?>.stride), &needed
-                ).boolValue
+                )
             }
             guard ok else { return [] }
             let count = Int(needed) / MemoryLayout<HMODULE?>.stride

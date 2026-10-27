@@ -42,7 +42,7 @@ prototype of the runtime API pitched on the Swift Forums:
 ## Install
 
 ```swift
-.package(url: "https://github.com/OlafAndreas/swift-sections.git", from: "0.2.0")
+.package(url: "https://github.com/OlafAndreas/swift-sections.git", from: "0.2.1")
 ```
 
 Requires Swift 6.3 or later. No dependencies, no macros.

@@ -15,8 +15,8 @@ public enum SectionContents {
     /// afterwards while the token lives.
     ///
     /// Later images are only observed on Mach-O, where this package registers with dyld.
-    /// On ELF there is no loader notification available to a library; the handler runs for
-    /// the images loaded at the time of the call and never again.
+    /// On ELF and Windows there is no loader notification available to a library; the
+    /// handler runs for the images loaded at the time of the call and never again.
     ///
     /// The handler may run on the thread that loaded an image, under the loader's lock. It
     /// must not load images or block on work that might, and should copy what it needs and

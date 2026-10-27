@@ -6,6 +6,10 @@
 ///     let handlers = SectionName("swift5_hndlr")
 ///     #endif
 ///
+/// On Windows, a name such as `.sctst$B` places records in the `$B` group of the image
+/// section `.sctst`: the linker merges groups into one section, ordered by the suffix. The
+/// image section is looked up, and its name is limited to 8 bytes.
+///
 /// The name is split and null-terminated once, here, so that nothing on the enumeration
 /// path allocates or builds a `String`. Mach-O segment and section names are limited to
 /// 16 bytes each; a longer name is a silent empty section, so it traps in debug builds.
@@ -14,7 +18,8 @@ public struct SectionName: Sendable, Hashable {
     let cName: [CChar]
     /// Mach-O segment, null-terminated. Empty on other formats.
     let segment: [CChar]
-    /// Mach-O section, null-terminated. Equal to `cName` on other formats.
+    /// Mach-O section, or the image section on Windows, null-terminated. Equal to `cName`
+    /// on other formats.
     let section: [CChar]
 
     public init(_ name: StaticString) {
@@ -26,7 +31,13 @@ public struct SectionName: Sendable, Hashable {
             assert(segment.count <= 17 && section.count <= 17, "Mach-O segment and section names are limited to 16 bytes")
         } else {
             segment = [0]
+            #if os(Windows)
+            let image = bytes.firstIndex(of: UInt8(ascii: "$")).map { bytes[..<$0] } ?? bytes[...]
+            section = image.map { CChar(bitPattern: $0) } + [0]
+            assert(section.count <= 9, "PE image section names are limited to 8 bytes")
+            #else
             section = cName
+            #endif
         }
     }
 

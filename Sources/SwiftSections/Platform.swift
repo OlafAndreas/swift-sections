@@ -79,6 +79,75 @@ enum Platform {
     }
 }
 
+#elseif os(Windows)
+import WinSDK
+
+/// PE/COFF. Every loaded module's headers are mapped at its base address, so the section
+/// table is read in place. Windows offers a library no public notification for modules
+/// loaded later, so `observe` only replays the modules loaded at the call.
+enum Platform {
+    static func loaded(_ section: SectionName) -> [UnsafeRawBufferPointer] {
+        modules().compactMap { contents(of: section, in: UnsafeRawPointer($0)) }
+    }
+
+    static func observe(
+        _ section: SectionName,
+        _ handler: @escaping @Sendable (UnsafeRawBufferPointer) -> Void
+    ) -> ObservationToken {
+        for bytes in loaded(section) { handler(bytes) }
+        return ObservationToken {}
+    }
+
+    private static func modules() -> [HMODULE] {
+        let process = GetCurrentProcess()
+        var modules = [HMODULE?](repeating: nil, count: 256)
+        while true {
+            var needed: DWORD = 0
+            let ok = modules.withUnsafeMutableBufferPointer { buffer in
+                K32EnumProcessModules(
+                    process, buffer.baseAddress, DWORD(buffer.count * MemoryLayout<HMODULE?>.stride), &needed
+                ).boolValue
+            }
+            guard ok else { return [] }
+            let count = Int(needed) / MemoryLayout<HMODULE?>.stride
+            if count <= modules.count { return modules.prefix(count).compactMap { $0 } }
+            modules = [HMODULE?](repeating: nil, count: count)
+        }
+    }
+
+    private static func contents(of section: SectionName, in base: UnsafeRawPointer) -> UnsafeRawBufferPointer? {
+        let dos = base.loadUnaligned(as: IMAGE_DOS_HEADER.self)
+        guard dos.e_magic == 0x5A4D else { return nil }  // "MZ"
+        let nt = base + Int(dos.e_lfanew)
+        guard nt.loadUnaligned(as: UInt32.self) == 0x0000_4550 else { return nil }  // "PE\0\0"
+        let file = nt.loadUnaligned(fromByteOffset: 4, as: IMAGE_FILE_HEADER.self)
+        var header = nt + 4 + MemoryLayout<IMAGE_FILE_HEADER>.size + Int(file.SizeOfOptionalHeader)
+        for _ in 0..<Int(file.NumberOfSections) {
+            let entry = header.loadUnaligned(as: IMAGE_SECTION_HEADER.self)
+            if section.matches(entry.Name) {
+                let size = Int(entry.Misc.VirtualSize)
+                return size > 0 ? UnsafeRawBufferPointer(start: base + Int(entry.VirtualAddress), count: size) : nil
+            }
+            header += MemoryLayout<IMAGE_SECTION_HEADER>.size
+        }
+        return nil
+    }
+}
+
+private extension SectionName {
+    /// PE section names are 8 bytes, null-padded when shorter.
+    func matches(_ name: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)) -> Bool {
+        withUnsafeBytes(of: name) { bytes in
+            let length = section.count - 1
+            guard length <= 8 else { return false }
+            for index in 0..<8 {
+                let expected: UInt8 = index < length ? UInt8(bitPattern: section[index]) : 0
+                if bytes[index] != expected { return false }
+            }
+            return true
+        }
+    }
+}
 #else
 import SwiftSectionsShim
 

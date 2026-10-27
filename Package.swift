@@ -13,6 +13,11 @@ let package = Package(
         // from each image's file, because ELF section headers are not mapped at runtime.
         .target(name: "SwiftSectionsShim"),
         .testTarget(name: "SwiftSectionsTests", dependencies: ["SwiftSections"]),
-    ],
-    swiftLanguageVersions: [.version("6")]
+    ]
 )
+
+// Swift 6 language mode. Set here rather than in the initializer so that SwiftPM versions
+// before 6.0, which reject language version 6, can still read the manifest.
+#if compiler(>=6)
+package.swiftLanguageVersions = [.version("6")]
+#endif
